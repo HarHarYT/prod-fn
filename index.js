@@ -4,27 +4,34 @@ const port = 3000;
 const path = require('path');
 const fs = require('fs');
 
-
 const apiStartTime = new Date().toISOString();
-
-
 const netCoreVersion = "5.0.0";
 const apiCreationDate = "2024-05-29";
 
-
+// Array to store registered endpoints
 let endpoints = [];
 
-
+// Function to register endpoints with description
 const registerEndpoint = (method, route, description) => {
-  endpoints.push({ method, route, description });
+  app[method.toLowerCase()](route, (req, res, next) => {
+    console.log(`Handling ${method} request for ${route}`);
+    if (description) {
+      endpoints.push({ method, route, description });
+    }
+    next(); // Continue to the next middleware
+  });
 };
 
+// Define your endpoints using the registerEndpoint function
+
+// Get API start time
+registerEndpoint('GET', '/api/status/v2', 'Get the API start time');
 app.get('/api/status/v2', (req, res) => {
   res.json({ startTime: apiStartTime });
 });
-registerEndpoint('GET', '/api/status/v2', 'Get the API start time');
 
-
+// Get .NET Core version, API creation date, and overall health
+registerEndpoint('GET', '/api/lightswitch/v2', 'Get .NET Core version, API creation date, and overall health');
 app.get('/api/lightswitch/v2', (req, res) => {
   res.json({
     netCoreVersion: netCoreVersion,
@@ -32,9 +39,9 @@ app.get('/api/lightswitch/v2', (req, res) => {
     health: "Healthy"
   });
 });
-registerEndpoint('GET', '/api/lightswitch/v2', 'Get .NET Core version, API creation date, and overall health');
 
-
+// List all files in the "Files" directory
+registerEndpoint('GET', '/api/files/v2', 'List all files in the "Files" directory');
 app.get('/api/files/v2', (req, res, next) => {
   const filesDirectory = path.join(__dirname, 'Files');
   fs.readdir(filesDirectory, (err, files) => {
@@ -51,14 +58,15 @@ app.get('/api/files/v2', (req, res, next) => {
     res.json(fileList);
   });
 });
-registerEndpoint('GET', '/api/files/v2', 'List all files in the "Files" directory');
 
-
+// Launch the API
+registerEndpoint('GET', '/api/launch/v2', 'Launch the API');
 app.get('/api/launch/v2', (req, res) => {
   res.json({ launch: true });
 });
-registerEndpoint('GET', '/api/launch/v2', 'Launch the API');
 
+// Download a file from the "Files" directory
+registerEndpoint('GET', '/api/download/v2', 'Download a file from the "Files" directory');
 app.get('/api/download/v2', (req, res) => {
   const fileName = req.query.name;
   if (!fileName) {
@@ -72,14 +80,15 @@ app.get('/api/download/v2', (req, res) => {
     }
   });
 });
-registerEndpoint('GET', '/api/download/v2', 'Download a file from the "Files" directory');
 
-
+// Get the list of all available API endpoints
+registerEndpoint('GET', '/api/endpoints', 'Get the list of all available API endpoints');
 app.get('/api/endpoints', (req, res) => {
   res.json(endpoints);
 });
-registerEndpoint('GET', '/api/endpoints', 'Get the list of all available API endpoints');
 
+// Force restart the server
+registerEndpoint('POST', '/api/restart', 'Force restart the server');
 app.post('/api/restart', (req, res) => {
   res.json({ message: 'Server is restarting...' });
   console.log('Server is restarting...');
@@ -87,9 +96,35 @@ app.post('/api/restart', (req, res) => {
     process.exit(0);
   }, 1000);
 });
-registerEndpoint('POST', '/api/restart', 'Force restart the server');
 
+// Lightswitch API endpoint
+registerEndpoint('GET', '/lightswitch/api/service/bulk/status', 'Get status for serviceId in bulk');
+app.get('/lightswitch/api/service/bulk/status', (req, res) => {
+  const serviceId = req.query.serviceId;
+  if (serviceId !== 'Fortnite') {
+    return res.status(404).json({ error: 'Not Found', message: 'Service not found' });
+  }
 
+  // Prepare JSON response
+  const responseData = [
+    {
+      allowedActions: ["PLAY", "DOWNLOAD"],
+      banned: false,
+      launcherInfoDTO: {
+        appName: "Fortnite",
+        namespace: "fn"
+      },
+      maintenanceUri: null,
+      message: `${serviceId} is up.`,
+      serviceInstanceId: serviceId,
+      status: "UP"
+    }
+  ];
+
+  res.json(responseData);
+});
+
+// Start the server
 app.listen(port, () => {
   console.log(`API started on port ${port}`);
 });
