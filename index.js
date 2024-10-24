@@ -18,11 +18,11 @@ const registerEndpoint = (method, route, description) => {
     if (description) {
       endpoints.push({ method, route, description });
     }
-    next(); // Continue to the next middleware
+    next();
   });
 };
 
-// Define your endpoints using the registerEndpoint function
+
 
 // Get API start time
 registerEndpoint('GET', '/api/status/v2', 'Get the API start time');
@@ -97,34 +97,6 @@ app.post('/api/restart', (req, res) => {
   }, 1000);
 });
 
-// Lightswitch API endpoint
-registerEndpoint('GET', '/lightswitch/api/service/bulk/status', 'Get status for serviceId in bulk');
-app.get('/lightswitch/api/service/bulk/status', (req, res) => {
-  const serviceId = req.query.serviceId;
-  if (serviceId !== 'Fortnite') {
-    return res.status(404).json({ error: 'Not Found', message: 'Service not found' });
-  }
-
-  // Prepare JSON response
-  const responseData = [
-    {
-      allowedActions: ["PLAY", "DOWNLOAD"],
-      banned: false,
-      launcherInfoDTO: {
-        appName: "Fortnite",
-        namespace: "fn"
-      },
-      maintenanceUri: null,
-      message: `${serviceId} is up.`,
-      serviceInstanceId: serviceId,
-      status: "UP"
-    }
-  ];
-
-  res.json(responseData);
-});
-
-// Start the server
 app.listen(port, () => {
   console.log(`API started on port ${port}`);
 });
